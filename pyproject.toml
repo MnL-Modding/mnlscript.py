@@ -3,7 +3,7 @@ name = "mnlscript"
 version = "0.1.0"
 description = "Compiler and decompiler for the Mario & Luigi scripting language from and to Python."
 authors = ["Dimitar Dimitrov <dmtrdmtrov@gmail.com>"]
-license = "GPL-3.0-or-later"
+license = "LGPL-3.0-or-later"
 readme = "README.md"
 
 [tool.poetry.dependencies]
