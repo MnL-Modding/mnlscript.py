@@ -8,6 +8,9 @@ import typing
 from dynamicscope import DYNAMIC_SCOPE
 import mnllib
 
+from .consts import BubbleType, TailType, TextboxColor
+from .text import LanguageName, TextEntryDefinition, emit_text_entry
+
 
 COMMON_ARITHMETIC_COMMANDS = [
     "add",
@@ -57,8 +60,34 @@ def emit_command(
 
 
 @command_emitter()
+def terminate_script(*, subroutine: mnllib.Subroutine | None = None) -> mnllib.Command:
+    return emit_command(0x0000, subroutine=subroutine)
+
+
+@command_emitter()
 def return_(*, subroutine: mnllib.Subroutine | None = None) -> mnllib.Command:
     return emit_command(0x0001, subroutine=subroutine)
+
+
+@command_emitter()
+def wait(
+    frames: int | mnllib.Variable, *, subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(0x0004, [frames], subroutine=subroutine)
+
+
+@command_emitter()
+def push(
+    value: int | mnllib.Variable, *, subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(0x0005, [value], subroutine=subroutine)
+
+
+@command_emitter()
+def pop(
+    res: mnllib.Variable, *, subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(0x0006, [], res, subroutine=subroutine)
 
 
 @command_emitter()
@@ -191,3 +220,175 @@ fp_modulo = arithmetic_2_param_command("fp_modulo", 0x002F)
 fp_to_int = arithmetic_1_param_command("fp_to_int", 0x0030)
 fp_trunc = arithmetic_1_param_command("fp_trunc", 0x0031)
 fp_atan2 = arithmetic_2_param_command("fp_atan2", 0x0038)
+
+
+@command_emitter()
+def set_animation(
+    actor: int | mnllib.Variable,
+    animation: int | mnllib.Variable,
+    *,
+    unk3: int | mnllib.Variable = 0x01,
+    subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(0x0096, [actor, animation, unk3], subroutine=subroutine)
+
+
+@command_emitter()
+def show_save_dialog(
+    fade_in: bool | int | mnllib.Variable = True,
+    *,
+    unk1: int | mnllib.Variable = 0x00,
+    unk2: int | mnllib.Variable = 0x01,
+    subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(
+        0x0199,
+        [unk1, unk2, int(fade_in) if isinstance(fade_in, bool) else fade_in],
+        subroutine=subroutine,
+    )
+
+
+@command_emitter()
+def show_textbox(
+    actor_or_position: (
+        int | tuple[int | mnllib.Variable, int | mnllib.Variable] | mnllib.Variable
+    ),
+    sound: int | mnllib.Variable,
+    message: (
+        TextEntryDefinition
+        | dict[LanguageName, TextEntryDefinition]
+        | int
+        | mnllib.Variable
+    ),
+    bubble: int | mnllib.Variable = BubbleType.NORMAL,
+    tail: int | mnllib.Variable = TailType.NORMAL,
+    wait: bool | int | mnllib.Variable = True,
+    color: int | mnllib.Variable = TextboxColor.NORMAL,
+    width: int | mnllib.Variable | None = None,
+    height: int | mnllib.Variable | None = None,
+    tail_size: int | mnllib.Variable = -0x01,
+    tail_direction: int | mnllib.Variable | None = None,
+    textbox_hoffset: int | None = None,
+    tail_hoffset: int | None = None,
+    *,
+    res: mnllib.Variable = mnllib.Variable(0x1000),
+    unk9: int | mnllib.Variable = 0x01,
+    unk14: int | mnllib.Variable = 0x0000,
+    subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    if isinstance(message, (TextEntryDefinition, dict)):
+        message_id: int | mnllib.Variable | None = emit_text_entry(message)
+    else:
+        message_id = message
+
+    args = [
+        width if width is not None else 0,
+        height if height is not None else 0,
+        bubble,
+        tail,
+        tail_size,
+        tail_direction if tail_direction is not None else -1,
+        ((textbox_hoffset if textbox_hoffset is not None else -1) << 8)
+        | (tail_hoffset if tail_hoffset is not None else -1),
+        unk9,
+        0 if wait else 1,
+        sound,
+        message_id,
+    ]
+
+    if isinstance(actor_or_position, (tuple, list)):
+        return emit_command(
+            0x01B9,
+            [actor_or_position[0], actor_or_position[1], *args, unk14, color],
+            res,
+            subroutine=subroutine,
+        )
+    else:
+        return emit_command(
+            0x01BA,
+            [actor_or_position, *args, color],
+            res,
+            subroutine=subroutine,
+        )
+
+
+@command_emitter()
+def wait_for_textbox(
+    *, unk1: int | mnllib.Variable = 0x00, subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    return emit_command(0x01BD, [unk1], subroutine=subroutine)
+
+
+@command_emitter()
+def say(
+    actor_or_position: (
+        int | tuple[int | mnllib.Variable, int | mnllib.Variable] | mnllib.Variable
+    ),
+    sound: int | mnllib.Variable,
+    message: (
+        TextEntryDefinition
+        | dict[LanguageName, TextEntryDefinition]
+        | int
+        | mnllib.Variable
+    ),
+    anim: int | mnllib.Variable | None = 0x01,
+    post_anim: int | mnllib.Variable | None = 0x03,
+    bubble: int | mnllib.Variable = BubbleType.NORMAL,
+    tail: int | mnllib.Variable = TailType.NORMAL,
+    wait: bool | int | mnllib.Variable = True,
+    color: int | mnllib.Variable = TextboxColor.NORMAL,
+    width: int | mnllib.Variable | None = None,
+    height: int | mnllib.Variable | None = None,
+    tail_size: int | mnllib.Variable = -0x01,
+    tail_direction: int | mnllib.Variable | None = None,
+    textbox_hoffset: int | None = None,
+    tail_hoffset: int | None = None,
+    *,
+    res: mnllib.Variable = mnllib.Variable(0x1000),
+    unk9: int | mnllib.Variable = 0x01,
+    unk14: int | mnllib.Variable = 0x0000,
+    subroutine: mnllib.Subroutine | None = None
+) -> mnllib.Command:
+    is_actor = not isinstance(actor_or_position, tuple)
+
+    if is_actor and anim is not None:
+        set_animation(
+            typing.cast(
+                int | mnllib.Variable, actor_or_position
+            ),  # pyright: ignore [reportUnnecessaryCast]
+            anim,
+            subroutine=subroutine,
+        )
+
+    show_textbox_cmd = show_textbox(
+        actor_or_position=actor_or_position,
+        sound=sound,
+        message=message,
+        bubble=bubble,
+        tail=tail,
+        wait=wait,
+        color=color,
+        width=width,
+        height=height,
+        tail_size=tail_size,
+        tail_direction=tail_direction,
+        textbox_hoffset=textbox_hoffset,
+        tail_hoffset=tail_hoffset,
+        res=res,
+        unk9=unk9,
+        unk14=unk14,
+        subroutine=subroutine,
+    )
+
+    if wait:
+        wait_for_textbox(subroutine=subroutine)
+    if is_actor and post_anim is not None:
+        set_animation(
+            typing.cast(
+                int | mnllib.Variable, actor_or_position
+            ),  # pyright: ignore [reportUnnecessaryCast]
+            post_anim,
+            subroutine=subroutine,
+        )
+
+    return show_textbox_cmd

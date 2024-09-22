@@ -13,8 +13,9 @@ LanguageName: typing.TypeAlias = typing.Literal["en", "fr", "de", "it", "es"]
 LANGUAGE_IDS: dict[LanguageName, int] = {
     "en": 0x44,
     "fr": 0x45,
-    "de": 0x46,
-    "it": 0x47,
+    # "de": 0x46,
+    # "it": 0x47,
+    # TODO
     "es": 0x48,
 }
 DEFAULT_LANGUAGE: LanguageName = "en"
@@ -63,31 +64,37 @@ class TextEntryDefinition(typing.NamedTuple):
 @typing.overload
 def emit_text_entry(
     text: str, /, textbox_size: tuple[int, int], *, room_id: int | None = None
-) -> None: ...
+) -> int | None: ...
 
 
 @typing.overload
 def emit_text_entry(
-    entry: dict[LanguageName, TextEntryDefinition], /, *, room_id: int | None = None
-) -> None: ...
+    entry: TextEntryDefinition | dict[LanguageName, TextEntryDefinition],
+    /,
+    *,
+    room_id: int | None = None,
+) -> int | None: ...
 
 
 def emit_text_entry(
-    entry: str | dict[LanguageName, TextEntryDefinition],
+    entry: str | TextEntryDefinition | dict[LanguageName, TextEntryDefinition],
     /,
     textbox_size: tuple[int, int] | None = None,
     *,
     room_id: int | None = None,
-) -> None:
+) -> int | None:
     if room_id is None:
         room_id = typing.cast(int, DYNAMIC_SCOPE.script_index) // 3
 
     if isinstance(entry, str) and textbox_size is None:
         raise TypeError("textbox_size must not be None if entry is a str")
 
+    text_entry_index: int | None = None
     for language_name, language_id in LANGUAGE_IDS.items():
         if isinstance(entry, dict):
             current_language_entry = entry.get(language_name, entry[DEFAULT_LANGUAGE])
+        elif isinstance(entry, TextEntryDefinition):
+            current_language_entry = entry
         else:
             current_language_entry = TextEntryDefinition(
                 entry, typing.cast(tuple[int, int], textbox_size)
@@ -104,8 +111,18 @@ def emit_text_entry(
                 f"language ID {fhex(language_id, 2)} must be an mnllib.TextTable, "
                 f"not '{type(text_table).__name__}'"
             )
+        if text_entry_index is None:
+            text_entry_index = len(text_table.entries)
+        elif len(text_table.entries) != text_entry_index:
+            raise ValueError(
+                "all text tables must have the same length for emit_text_entry() but "
+                f"table {fhex(language_id, 2)} has a length of "
+                f"{len(text_table.entries)} instead of {text_entry_index}"
+            )
         text_table.entries.append(
             current_language_entry.text.encode(mnllib.MNL_ENCODING)
         )
         if text_table.textbox_sizes is not None:
             text_table.textbox_sizes.append(current_language_entry.textbox_size)
+
+    return text_entry_index
