@@ -505,6 +505,15 @@ def show_save_dialog(
     return f"show_save_dialog({", ".join(args)})"
 
 
+@command_matcher("01AE,")
+def swap_screens(
+    _matched_commands: list[mnllib.Command],
+    _context: CommandMatchContext,
+    _match_start_index: int,
+) -> str | None:
+    return "swap_screens()"
+
+
 @command_matcher("....,")
 def unknown_command(
     matched_commands: list[mnllib.Command],

@@ -253,6 +253,11 @@ def show_save_dialog(
 
 
 @command_emitter()
+def swap_screens(*, subroutine: mnllib.Subroutine | None = None) -> mnllib.Command:
+    return emit_command(0x01AE, subroutine=subroutine)
+
+
+@command_emitter()
 def show_textbox(
     actor_or_position: (
         int | mnllib.Variable | tuple[int | mnllib.Variable, int | mnllib.Variable]
