@@ -1,3 +1,4 @@
+import codecs
 import types
 import typing
 
@@ -19,6 +20,25 @@ LANGUAGE_IDS: dict[LanguageName, int] = {
     "es": 0x48,
 }
 DEFAULT_LANGUAGE: LanguageName = "en"
+
+
+CODEC_ERROR_HANDLER_KEEP_LITERAL = "mnlscript:keepliteral"
+
+
+def keepliteral_errors(error: UnicodeError) -> tuple[str | bytes, int]:
+    if isinstance(error, UnicodeEncodeError):
+        return bytes([ord(x) for x in error.object[error.start : error.end]]), error.end
+    if isinstance(error, UnicodeDecodeError):
+        return (
+            "".join([chr(x) for x in error.object[error.start : error.end]]),
+            error.end,
+        )
+    if isinstance(error, UnicodeTranslateError):
+        return error.object[error.start : error.end], error.end
+    raise error
+
+
+codecs.register_error(CODEC_ERROR_HANDLER_KEEP_LITERAL, keepliteral_errors)
 
 
 TT = typing.TypeVar("TT", bytes, None)
@@ -120,7 +140,9 @@ def emit_text_entry(
                 f"{len(text_table.entries)} instead of {text_entry_index}"
             )
         text_table.entries.append(
-            current_language_entry.text.encode(mnllib.MNL_ENCODING)
+            current_language_entry.text.encode(
+                mnllib.MNL_ENCODING, errors=CODEC_ERROR_HANDLER_KEEP_LITERAL
+            )
         )
         if text_table.textbox_sizes is not None:
             text_table.textbox_sizes.append(current_language_entry.textbox_size)

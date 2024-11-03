@@ -6,26 +6,30 @@ import mnllib
 
 from .commands import (
     add,
-    add_assign,
+    add_in_place,
     bitwise_and,
-    bitwise_and_assign,
+    bitwise_and_in_place,
+    bitwise_not,
     bitwise_or,
-    bitwise_or_assign,
+    bitwise_or_in_place,
     bitwise_xor,
-    bitwise_xor_assign,
+    bitwise_xor_in_place,
+    decrement,
     divide,
-    divide_assign,
+    divide_in_place,
+    increment,
     logical_shift_left,
-    logical_shift_left_assign,
+    logical_shift_left_in_place,
     logical_shift_right,
-    logical_shift_right_assign,
+    logical_shift_right_in_place,
     modulo,
-    modulo_assign,
+    modulo_in_place,
     multiply,
-    multiply_assign,
+    multiply_in_place,
+    negate,
     set_variable,
     subtract,
-    subtract_assign,
+    subtract_in_place,
 )
 
 
@@ -55,16 +59,20 @@ class Operation:
 def single_command_operation(
     command_function: typing.Callable[..., typing.Any], reverse: bool = False
 ) -> typing.Callable[
-    [typing.Callable[P, typing.Any]],
+    [typing.Callable[P, Operation | types.NotImplementedType | None]],
     typing.Callable[P, Operation | types.NotImplementedType],
 ]:
     def decorator(
-        function: typing.Callable[P, typing.Any]
+        function: typing.Callable[P, Operation | types.NotImplementedType | None]
     ) -> typing.Callable[P, Operation | types.NotImplementedType]:
         @functools.wraps(function)
         def wrapper(
             *args: P.args, **kwargs: P.kwargs
         ) -> Operation | types.NotImplementedType:
+            result = function(*args, **kwargs)
+            if result is not None:
+                return result
+
             for arg in args:
                 if not isinstance(arg, (int, mnllib.Variable)):
                     return NotImplemented
@@ -88,16 +96,19 @@ def single_command_operation(
 def in_place_single_command_operation(
     command_function: typing.Callable[..., typing.Any]
 ) -> typing.Callable[
-    [typing.Callable[typing.Concatenate[T, P], typing.Any]],
+    [typing.Callable[typing.Concatenate[T, P], bool | None]],
     typing.Callable[typing.Concatenate[T, P], T | types.NotImplementedType],
 ]:
     def decorator(
-        function: typing.Callable[typing.Concatenate[T, P], typing.Any]
+        function: typing.Callable[typing.Concatenate[T, P], bool | None]
     ) -> typing.Callable[typing.Concatenate[T, P], T | types.NotImplementedType]:
         @functools.wraps(function)
         def wrapper(
             res: T, *args: P.args, **kwargs: P.kwargs
         ) -> T | types.NotImplementedType:
+            if function(res, *args, **kwargs):
+                return res
+
             for arg in args:
                 if not isinstance(arg, (int, mnllib.Variable)):
                     return NotImplemented
@@ -131,9 +142,15 @@ class Variable(mnllib.Variable):
     def __radd__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(add_assign)
-    def __iadd__(self, other: int | mnllib.Variable) -> None:
-        pass
+    @in_place_single_command_operation(add_in_place)
+    def __iadd__(self, other: int | mnllib.Variable) -> bool:
+        if other == 1:
+            increment(self)
+            return True
+        if other == -1:
+            decrement(self)
+            return True
+        return False
 
     @single_command_operation(subtract)
     def __sub__(self, other: int | mnllib.Variable) -> None:
@@ -143,9 +160,15 @@ class Variable(mnllib.Variable):
     def __rsub__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(subtract_assign)
-    def __isub__(self, other: int | mnllib.Variable) -> None:
-        pass
+    @in_place_single_command_operation(subtract_in_place)
+    def __isub__(self, other: int | mnllib.Variable) -> bool:
+        if other == 1:
+            decrement(self)
+            return True
+        if other == -1:
+            increment(self)
+            return True
+        return False
 
     @single_command_operation(multiply)
     def __mul__(self, other: int | mnllib.Variable) -> None:
@@ -155,7 +178,7 @@ class Variable(mnllib.Variable):
     def __rmul__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(multiply_assign)
+    @in_place_single_command_operation(multiply_in_place)
     def __imul__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -167,7 +190,7 @@ class Variable(mnllib.Variable):
     def __rfloordiv__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(divide_assign)
+    @in_place_single_command_operation(divide_in_place)
     def __ifloordiv__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -179,7 +202,7 @@ class Variable(mnllib.Variable):
     def __rmod__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(modulo_assign)
+    @in_place_single_command_operation(modulo_in_place)
     def __imod__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -191,7 +214,7 @@ class Variable(mnllib.Variable):
     def __rlshift__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(logical_shift_left_assign)
+    @in_place_single_command_operation(logical_shift_left_in_place)
     def __ilshift__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -203,7 +226,7 @@ class Variable(mnllib.Variable):
     def __rrshift__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(logical_shift_right_assign)
+    @in_place_single_command_operation(logical_shift_right_in_place)
     def __irshift__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -215,7 +238,7 @@ class Variable(mnllib.Variable):
     def __rand__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(bitwise_and_assign)
+    @in_place_single_command_operation(bitwise_and_in_place)
     def __iand__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -227,7 +250,7 @@ class Variable(mnllib.Variable):
     def __rxor__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(bitwise_xor_assign)
+    @in_place_single_command_operation(bitwise_xor_in_place)
     def __ixor__(self, other: int | mnllib.Variable) -> None:
         pass
 
@@ -239,8 +262,16 @@ class Variable(mnllib.Variable):
     def __ror__(self, other: int | mnllib.Variable) -> None:
         pass
 
-    @in_place_single_command_operation(bitwise_or_assign)
+    @in_place_single_command_operation(bitwise_or_in_place)
     def __ior__(self, other: int | mnllib.Variable) -> None:
+        pass
+
+    @single_command_operation(negate)
+    def __neg__(self) -> None:
+        pass
+
+    @single_command_operation(bitwise_not)
+    def __invert__(self) -> None:
         pass
 
 

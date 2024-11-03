@@ -2,6 +2,13 @@ import re
 import enum
 
 
+class SelfType(enum.Enum):
+    Self = object()
+
+
+Self = SelfType.Self
+
+
 PADDING_TEXT_TABLE_ID = 0x49
 
 

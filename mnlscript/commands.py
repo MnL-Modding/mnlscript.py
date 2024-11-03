@@ -1,5 +1,5 @@
 # TODO: Fix type annotations and remove asserts once
-# concatenationg keyword parameters is added.
+# concatenating keyword parameters is added.
 
 
 import functools
@@ -8,7 +8,7 @@ import typing
 from dynamicscope import DYNAMIC_SCOPE
 import mnllib
 
-from .consts import BubbleType, TailType, TextboxColor
+from .consts import BubbleType, Self, SelfType, TailType, TextboxColor
 from .text import LanguageName, TextEntryDefinition, emit_text_entry
 
 
@@ -146,7 +146,7 @@ def arithmetic_2_param_command(name: str, command_id: int):
 # ):
 #     _globals[name] = arithmetic_2_param_command(name, 0x0009 + i)
 #
-#     assign_command_name = name + "_assign"
+#     assign_command_name = name + "_in_place"
 #     _globals[assign_command_name] = arithmetic_1_param_command(
 #         assign_command_name, 0x0018 + i
 #     )
@@ -160,20 +160,20 @@ logical_shift_right = arithmetic_2_param_command("logical_shift_right", 0x000F)
 bitwise_and = arithmetic_2_param_command("bitwise_and", 0x0010)
 bitwise_or = arithmetic_2_param_command("bitwise_or", 0x0011)
 bitwise_xor = arithmetic_2_param_command("bitwise_xor", 0x0012)
-add_assign = arithmetic_1_param_command("add_assign", 0x0018)
-subtract_assign = arithmetic_1_param_command("subtract_assign", 0x0019)
-multiply_assign = arithmetic_1_param_command("multiply_assign", 0x001A)
-divide_assign = arithmetic_1_param_command("divide_assign", 0x001B)
-modulo_assign = arithmetic_1_param_command("modulo_assign", 0x001C)
-logical_shift_left_assign = arithmetic_1_param_command(
-    "logical_shift_left_assign", 0x001D
+add_in_place = arithmetic_1_param_command("add_in_place", 0x0018)
+subtract_in_place = arithmetic_1_param_command("subtract_in_place", 0x0019)
+multiply_in_place = arithmetic_1_param_command("multiply_in_place", 0x001A)
+divide_in_place = arithmetic_1_param_command("divide_in_place", 0x001B)
+modulo_in_place = arithmetic_1_param_command("modulo_in_place", 0x001C)
+logical_shift_left_in_place = arithmetic_1_param_command(
+    "logical_shift_left_in_place", 0x001D
 )
-logical_shift_right_assign = arithmetic_1_param_command(
-    "logical_shift_right_assign", 0x001E
+logical_shift_right_in_place = arithmetic_1_param_command(
+    "logical_shift_right_in_place", 0x001E
 )
-bitwise_and_assign = arithmetic_1_param_command("bitwise_and_assign", 0x001F)
-bitwise_or_assign = arithmetic_1_param_command("bitwise_or_assign", 0x0020)
-bitwise_xor_assign = arithmetic_1_param_command("bitwise_xor_assign", 0x0021)
+bitwise_and_in_place = arithmetic_1_param_command("bitwise_and_in_place", 0x001F)
+bitwise_or_in_place = arithmetic_1_param_command("bitwise_or_in_place", 0x0020)
+bitwise_xor_in_place = arithmetic_1_param_command("bitwise_xor_in_place", 0x0021)
 
 negate = arithmetic_1_param_command("negate", 0x0013)
 to_boolean = arithmetic_1_param_command("to_boolean", 0x0014)
@@ -224,13 +224,17 @@ fp_atan2 = arithmetic_2_param_command("fp_atan2", 0x0038)
 
 @command_emitter()
 def set_animation(
-    actor: int | mnllib.Variable,
+    actor: int | mnllib.Variable | SelfType,
     animation: int | mnllib.Variable,
     *,
     unk3: int | mnllib.Variable = 0x01,
     subroutine: mnllib.Subroutine | None = None
 ) -> mnllib.Command:
-    return emit_command(0x0096, [actor, animation, unk3], subroutine=subroutine)
+    return emit_command(
+        0x0096,
+        [actor if actor is not Self else -1, animation, unk3],
+        subroutine=subroutine,
+    )
 
 
 @command_emitter()
@@ -251,7 +255,7 @@ def show_save_dialog(
 @command_emitter()
 def show_textbox(
     actor_or_position: (
-        int | tuple[int | mnllib.Variable, int | mnllib.Variable] | mnllib.Variable
+        int | mnllib.Variable | tuple[int | mnllib.Variable, int | mnllib.Variable]
     ),
     sound: int | mnllib.Variable,
     message: (
@@ -271,11 +275,20 @@ def show_textbox(
     textbox_hoffset: int | None = None,
     tail_hoffset: int | None = None,
     *,
+    hoffsets_arg: int | mnllib.Variable | None = None,
     res: mnllib.Variable = mnllib.Variable(0x1000),
     unk9: int | mnllib.Variable = 0x01,
     unk14: int | mnllib.Variable = 0x0000,
     subroutine: mnllib.Subroutine | None = None
 ) -> mnllib.Command:
+    if (
+        textbox_hoffset is not None or tail_hoffset is not None
+    ) and hoffsets_arg is not None:
+        raise ValueError(
+            "at most one of textbox_hoffset/tail_hoffset and hoffsets_arg may be "
+            "provided to say()"
+        )
+
     if isinstance(message, (TextEntryDefinition, dict)):
         message_id: int | mnllib.Variable | None = emit_text_entry(message)
     else:
@@ -288,10 +301,16 @@ def show_textbox(
         tail,
         tail_size,
         tail_direction if tail_direction is not None else -1,
-        ((textbox_hoffset if textbox_hoffset is not None else -1) << 8)
-        | (tail_hoffset if tail_hoffset is not None else -1),
+        (
+            hoffsets_arg
+            if hoffsets_arg is not None
+            else (
+                ((textbox_hoffset if textbox_hoffset is not None else -1) << 8)
+                | (tail_hoffset if tail_hoffset is not None else -1)
+            )
+        ),
         unk9,
-        0 if wait else 1,
+        int(not wait) if isinstance(wait, bool) else wait,
         sound,
         message_id,
     ]
@@ -322,7 +341,7 @@ def wait_for_textbox(
 @command_emitter()
 def say(
     actor_or_position: (
-        int | tuple[int | mnllib.Variable, int | mnllib.Variable] | mnllib.Variable
+        int | mnllib.Variable | tuple[int | mnllib.Variable, int | mnllib.Variable]
     ),
     sound: int | mnllib.Variable,
     message: (
@@ -344,12 +363,14 @@ def say(
     textbox_hoffset: int | None = None,
     tail_hoffset: int | None = None,
     *,
+    hoffsets_arg: int | mnllib.Variable | None = None,
+    force_wait_command: bool | None = None,
     res: mnllib.Variable = mnllib.Variable(0x1000),
     unk9: int | mnllib.Variable = 0x01,
     unk14: int | mnllib.Variable = 0x0000,
     subroutine: mnllib.Subroutine | None = None
 ) -> mnllib.Command:
-    is_actor = not isinstance(actor_or_position, tuple)
+    is_actor = not isinstance(actor_or_position, (tuple, list))
 
     if is_actor and anim is not None:
         set_animation(
@@ -374,13 +395,18 @@ def say(
         tail_direction=tail_direction,
         textbox_hoffset=textbox_hoffset,
         tail_hoffset=tail_hoffset,
+        hoffsets_arg=hoffsets_arg,
         res=res,
         unk9=unk9,
         unk14=unk14,
         subroutine=subroutine,
     )
 
-    if wait:
+    if (
+        (wait is True or (type(wait) is int and wait == 0))
+        if force_wait_command is None
+        else force_wait_command
+    ):
         wait_for_textbox(subroutine=subroutine)
     if is_actor and post_anim is not None:
         set_animation(

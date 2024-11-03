@@ -1,58 +1,38 @@
 import pathlib
+import copy
 import textwrap
 import pprint
 import typing
 
 import mnllib
 
-from ..consts import PADDING_TEXT_TABLE_ID
-from ..utils import fhex
-from .consts import FEVENT_SCRIPTS_DIR
-
-
-def decompile_variable(variable: mnllib.Variable) -> str:
-    return f"Variables[{fhex(variable.number, 4)}]"
-
-
-def decompile_command(manager: mnllib.MnLScriptManager, command: mnllib.Command) -> str:
-    formatted_args: list[str] = []
-    for i, argument in enumerate(command.arguments):
-        if isinstance(argument, mnllib.Variable):
-            formatted_args.append(decompile_variable(argument))
-        else:
-            formatted_args.append(
-                fhex(
-                    argument,
-                    mnllib.COMMAND_PARAMETER_STRUCT_MAP[
-                        manager.command_parameter_metadata_table[
-                            command.command_id
-                        ].parameter_types[i]
-                    ].size
-                    * 2,
-                )
-            )
-    return f"emit_command({fhex(command.command_id, 4)}{
-        f", [{", ".join(formatted_args)}]"
-        if len(formatted_args) > 0 or command.result_variable is not None
-        else ""
-    }{
-        f", {decompile_variable(command.result_variable)}"
-        if command.result_variable is not None
-        else ""
-    })"
+from ...consts import PADDING_TEXT_TABLE_ID
+from ...text import LANGUAGE_IDS
+from ...utils import fhex
+from ..consts import FEVENT_SCRIPTS_DIR
+from .command_matchers import decompile_subroutine_commands
+from .globals import DecompilerGlobals
+from .misc import decompile_text_entry
 
 
 def decompile_subroutine(
     manager: mnllib.MnLScriptManager,
     subroutine: mnllib.Subroutine,
+    chunk_triple: tuple[
+        mnllib.FEventScript | None, mnllib.FEventChunk | None, mnllib.FEventChunk | None
+    ],
+    script_index: int,
     index: int | None,
     output: typing.TextIO,
 ) -> None:
-    processed_commands: list[mnllib.Command] = subroutine.commands.copy()
+    processed_subroutine = copy.deepcopy(subroutine)
     has_return = False
-    if len(processed_commands) > 0 and processed_commands[-1].command_id == 0x0001:
+    if (
+        len(processed_subroutine.commands) > 0
+        and processed_subroutine.commands[-1].command_id == 0x0001
+    ):
         has_return = True
-        del processed_commands[-1]
+        del processed_subroutine.commands[-1]
 
     decorator_args: list[str] = []
     if index is None:
@@ -70,11 +50,10 @@ def decompile_subroutine(
         )
     )
 
-    if len(processed_commands) > 0:
-        for i, command in enumerate(processed_commands):
-            output.write(f"    {decompile_command(manager, command)}")
-            if i != len(processed_commands) - 1:
-                output.write("\n")
+    if len(processed_subroutine.commands) > 0:
+        decompile_subroutine_commands(
+            manager, processed_subroutine, chunk_triple, script_index, output, " " * 4
+        )
     else:
         output.write("    pass")
 
@@ -85,8 +64,8 @@ def decompile_script(
     chunk_triple: tuple[
         mnllib.FEventScript | None, mnllib.FEventChunk | None, mnllib.FEventChunk | None
     ],
+    index: int,
     output: typing.TextIO,
-    index: int | None,
 ) -> None:
     output.write(
         textwrap.dedent(
@@ -116,16 +95,47 @@ def decompile_script(
         )
     )
     if script.header.post_table_subroutine != mnllib.Subroutine([]):  # TODO
-        decompile_subroutine(manager, script.header.post_table_subroutine, None, output)
+        decompile_subroutine(
+            manager,
+            script.header.post_table_subroutine,
+            chunk_triple,
+            index,
+            None,
+            output,
+        )
         output.write("\n\n\n")
 
     for i, subroutine in enumerate(script.subroutines):
-        decompile_subroutine(manager, subroutine, i, output)
+        decompile_subroutine(manager, subroutine, chunk_triple, index, i, output)
         if i != len(script.subroutines) - 1:
             output.write("\n\n\n")
 
+    room_id = index // 3
     if isinstance(chunk_triple[2], mnllib.LanguageTable) and script is chunk_triple[0]:
         output.write("\n")
+
+        if DecompilerGlobals.next_text_entry_index[room_id] != 0:
+            first = True
+            for text_entry_index in range(
+                DecompilerGlobals.next_text_entry_index[room_id],
+                len(
+                    typing.cast(
+                        mnllib.TextTable,
+                        chunk_triple[2].text_tables[next(iter(LANGUAGE_IDS.values()))],
+                    ).entries
+                ),
+            ):
+                if first:
+                    output.write("\n")
+                    first = False
+                output.write(
+                    f"\nemit_text_entry({decompile_text_entry(
+                        chunk_triple[2],
+                        text_entry_index,
+                        implicit_text_entry_definition=True
+                    )})  # {fhex(text_entry_index, 2)}"
+                )
+
         language_table_size = len(chunk_triple[2].to_bytes(manager))
         for i, text_table in enumerate(chunk_triple[2].text_tables):
             # if i == PADDING_TEXT_TABLE_ID:
@@ -170,13 +180,17 @@ def decompile_script(
                 continue
 
             if isinstance(text_table, mnllib.TextTable):
-                output.write(
-                    f"\n\nemit_text_table({fhex(i, 2)}, [\n{
-                        "\n".join([f"    {x!r}," for x in text_table.entries])
-                    }\n], is_dialog=True, textbox_sizes={
-                        pprint.pformat(text_table.textbox_sizes, indent=4, compact=True)
-                    })"
-                )
+                if not (
+                    0x44 <= i <= 0x48
+                    and DecompilerGlobals.next_text_entry_index[room_id] != 0
+                ):
+                    output.write(
+                        f"\n\nemit_text_table({fhex(i, 2)}, [\n{
+                            "\n".join([f"    {x!r}," for x in text_table.entries])
+                        }\n], is_dialog=True, textbox_sizes={pprint.pformat(
+                            text_table.textbox_sizes, indent=4, compact=True
+                        )})"
+                    )
             elif isinstance(text_table, bytes):
                 if len(set(text_table)) == 1 and len(text_table) > 1:
                     formatted_text_table = f"{text_table[0:1]!r} * {len(text_table)}"
@@ -210,7 +224,7 @@ def main() -> None:
             #     continue
             with path.open("w") as file:
                 decompile_script(
-                    fevent_manager, chunk, chunk_triple, file, room_id * 3 + i
+                    fevent_manager, chunk, chunk_triple, room_id * 3 + i, file
                 )
 
 
