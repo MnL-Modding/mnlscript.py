@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --no-interaction
-          pip3 install pytest-md pytest-emoji
+          # pip3 install pytest-md pytest-emoji
       - name: Check with mypy
         run: |
           mypy .

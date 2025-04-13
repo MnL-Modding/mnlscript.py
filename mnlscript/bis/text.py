@@ -3,15 +3,16 @@ import types
 import typing
 
 from dynamicscope import DYNAMIC_SCOPE
-
 import mnllib
+import mnllib.bis
 
+from ..utils import fhex
 from .globals import Globals
-from .utils import fhex
 
 
-LanguageName: typing.TypeAlias = typing.Literal["en", "fr", "de", "it", "es"]
+type LanguageName = typing.Literal["jp", "en", "fr", "de", "it", "es"]
 LANGUAGE_IDS: dict[LanguageName, int] = {
+    # "jp": 0x43,
     "en": 0x44,
     "fr": 0x45,
     # "de": 0x46,
@@ -41,22 +42,20 @@ def keepliteral_errors(error: UnicodeError) -> tuple[str | bytes, int]:
 codecs.register_error(CODEC_ERROR_HANDLER_KEEP_LITERAL, keepliteral_errors)
 
 
-TT = typing.TypeVar("TT", bytes, None)
-
-
 @typing.overload
-def emit_text_table(  # pyright: ignore [reportOverlappingOverload]
+def emit_text_table[TT: (
+    bytes,
+    None,
+)](  # pyright: ignore [reportOverlappingOverload]
     text_table_id: int, text_table: TT, *, room_id: int | None = None
 ) -> TT: ...
-
-
 @typing.overload
 def emit_text_table(  # pyright: ignore [reportOverlappingOverload]
     text_table_id: int,
     *args: typing.Any,
     room_id: int | None = None,
     **kwargs: typing.Any,
-) -> mnllib.TextTable: ...
+) -> mnllib.bis.TextTable: ...
 
 
 def emit_text_table(
@@ -64,14 +63,14 @@ def emit_text_table(
     *args: typing.Any,
     room_id: int | None = None,
     **kwargs: typing.Any,
-) -> mnllib.TextTable | bytes | None:
+) -> mnllib.bis.TextTable | bytes | None:
     if room_id is None:
         room_id = typing.cast(int, DYNAMIC_SCOPE.script_index) // 3
 
     if len(args) > 0 and isinstance(args[0], (bytes, types.NoneType)):
-        text_table: mnllib.TextTable | bytes | None = args[0]
+        text_table: mnllib.bis.TextTable | bytes | None = args[0]
     else:
-        text_table = mnllib.TextTable(*args, **kwargs)
+        text_table = mnllib.bis.TextTable(*args, **kwargs)
     Globals.text_tables[room_id][text_table_id] = text_table
     return text_table
 
@@ -85,8 +84,6 @@ class TextEntryDefinition(typing.NamedTuple):
 def emit_text_entry(
     text: str, /, textbox_size: tuple[int, int], *, room_id: int | None = None
 ) -> int | None: ...
-
-
 @typing.overload
 def emit_text_entry(
     entry: TextEntryDefinition | dict[LanguageName, TextEntryDefinition],
@@ -121,14 +118,14 @@ def emit_text_entry(
             )
 
         if language_id not in Globals.text_tables[room_id]:
-            Globals.text_tables[room_id][language_id] = mnllib.TextTable(
+            Globals.text_tables[room_id][language_id] = mnllib.bis.TextTable(
                 [], is_dialog=True, textbox_sizes=[]
             )  # TODO: is_dialog
         text_table = Globals.text_tables[room_id][language_id]
-        if not isinstance(text_table, mnllib.TextTable):
+        if not isinstance(text_table, mnllib.bis.TextTable):
             raise TypeError(
                 f"emit_text_entry() text table for room {fhex(room_id, 4)} with "
-                f"language ID {fhex(language_id, 2)} must be an mnllib.TextTable, "
+                f"language ID {fhex(language_id, 2)} must be an mnllib.bis.TextTable, "
                 f"not '{type(text_table).__name__}'"
             )
         if text_entry_index is None:
@@ -136,12 +133,12 @@ def emit_text_entry(
         elif len(text_table.entries) != text_entry_index:
             raise ValueError(
                 "all text tables must have the same length for emit_text_entry() but "
-                f"table {fhex(language_id, 2)} has a length of "
-                f"{len(text_table.entries)} instead of {text_entry_index}"
+                f"table {fhex(language_id, 2)} of room {fhex(room_id, 4)} has "
+                f"a length of {len(text_table.entries)} instead of {text_entry_index}"
             )
         text_table.entries.append(
             current_language_entry.text.encode(
-                mnllib.MNL_ENCODING, errors=CODEC_ERROR_HANDLER_KEEP_LITERAL
+                mnllib.bis.BIS_ENCODING, errors=CODEC_ERROR_HANDLER_KEEP_LITERAL
             )
         )
         if text_table.textbox_sizes is not None:

@@ -1,5 +1,8 @@
 import re
 import enum
+import typing
+
+import bidict
 
 
 class SelfType(enum.Enum):
@@ -9,36 +12,46 @@ class SelfType(enum.Enum):
 Self = SelfType.Self
 
 
-PADDING_TEXT_TABLE_ID = 0x49
+INIT_SCRIPT_FILENAME = "__init__.py"
+FEVENT_SCRIPT_NAME_REGEX = re.compile(r"([0-9a-fA-F]+)(?:_(enemies))?")
 
 
-FEVENT_SCRIPT_NAME_REGEX = re.compile(r"([0-9a-fA-F]+)(?:_(\d+))?")
+type ComparisonOperator = typing.Literal[
+    "==", "!=", "<", ">", "<=", ">=", "&", "|", "^", "== 0", "!= -1"
+]
+COMPARISON_OPERATORS: bidict.bidict[int, ComparisonOperator] = bidict.bidict(
+    dict[int, ComparisonOperator](
+        {
+            0x00: "==",
+            0x01: "!=",
+            0x02: "<",
+            0x03: ">",
+            0x04: "<=",
+            0x05: ">=",
+            0x06: "&",
+            0x07: "|",
+            0x08: "^",
+            0x09: "== 0",
+            0x0A: "!= -1",
+        }
+    )
+)
 
 
-class BubbleType(enum.IntEnum):
-    NONE = 0x00
-    NORMAL = 0x01
-    SCREAMING = 0x02
+class StackTopModification(enum.IntEnum):
+    NONE = 0x0
+    INCREMENT_AFTER = 0x1
+    DECREMENT_AFTER = 0x2
+    INCREMENT_BEFORE = 0x3
+    DECREMENT_BEFORE = 0x4
 
 
-class TailType(enum.IntEnum):
-    NONE = 0x00
-    NORMAL = 0x01
-    SCREAMING = 0x03
+class StackPopCondition(enum.IntEnum):
+    NEVER = 0x0
+    IF_TRUE = 0x1
+    IF_FALSE = 0x2
 
 
-class TextboxColor(enum.IntEnum):
-    NORMAL = -0x01
-    SYSTEM = 0x01
-
-
-# class Animation(enum.IntEnum):
-#     SPEAKING = 0x01
-#     IDLE = 0x03
-
-
-class Sound(enum.IntEnum):
-    NONE = 0x00000000
-    SPEECH_BOWSER = 0x0002014F
-    SPEECH_FAWFUL = 0x00020153
-    SPEECH_TOAD = 0x00024149
+class Screen(enum.IntEnum):
+    TOP = 0
+    BOTTOM = 1

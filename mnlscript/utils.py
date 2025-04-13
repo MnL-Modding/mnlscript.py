@@ -3,10 +3,6 @@ import types
 import typing
 
 
-T = typing.TypeVar("T")
-P = typing.ParamSpec("P")
-
-
 def fhex(num: int, width: int = 0) -> str:
     return f"{"-" if num < 0 else ""}0x{abs(num):0{width}X}"
 
@@ -23,7 +19,7 @@ def fhex_int(num: int) -> str:
     return fhex(num, 8)
 
 
-def arg_isinstance_or_not_implemented(
+def arg_isinstance_or_not_implemented[T, **P](
     index: int, allowed_types: type | types.UnionType | tuple[type, ...]
 ) -> typing.Callable[
     [typing.Callable[P, T]], typing.Callable[P, T | types.NotImplementedType]

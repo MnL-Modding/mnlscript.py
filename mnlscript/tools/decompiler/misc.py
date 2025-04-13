@@ -1,100 +1,179 @@
+import argparse
+import copyreg
 import enum
+import pathlib
+import struct
 import typing
 
-import more_itertools
 import mnllib
+import numpy
 
-from ...text import LANGUAGE_IDS
+from ..consts import DEFAULT_SCRIPTS_DIR_PATH
 from ...utils import fhex
 
 
-T = typing.TypeVar("T")
+class MnLScriptDecompilerWarning(UserWarning):
+    pass
 
 
-def decompile_enum(
+def pickle_struct(value: struct.Struct) -> tuple[type[struct.Struct], tuple[str]]:
+    return struct.Struct, (value.format,)
+
+
+copyreg.pickle(struct.Struct, pickle_struct)
+
+
+def decompile_float32(value: float | numpy.float32) -> str:
+    return str(numpy.float32(value))
+
+
+def decompile_int_bool[T](
+    value: T,
+    unknown_formatter: typing.Callable[[T], str] = lambda value: fhex_or(
+        value, repr, width=2
+    ),
+    *,
+    invert: bool = False,
+) -> str:
+    if value in [0, 1]:
+        return repr(bool(value) != invert)
+    return unknown_formatter(value)
+
+
+def decompile_enum[T](
     enum_type: type[enum.Enum],
     value: T,
     unknown_formatter: typing.Callable[[T], str] = repr,
 ) -> str:
-    try:
-        return f"{enum_type.__name__}.{enum_type(value).name}"
-    except ValueError:
-        return unknown_formatter(value)
+    if not issubclass(enum_type, enum.Flag):
+        try:
+            return f"{enum_type.__name__}.{enum_type(value).name}"
+        except ValueError:
+            return unknown_formatter(value)
+
+    for name, member in enum_type.__members__.items():
+        if len(member) != 1 and value == member:
+            return f"{enum_type.__name__}.{name}"
+    members: list[str] = []
+    reconstructed_value = enum_type(0)
+    for member in enum_type(value):
+        if member.name is None:
+            continue
+        members.append(f"{enum_type.__name__}.{member.name}")
+        reconstructed_value |= member
+    extra_value = (enum_type(value) ^ reconstructed_value).value
+    if extra_value != 0:
+        members.append(unknown_formatter(typing.cast(T, extra_value)))
+    return " | ".join(members)
 
 
 def decompile_variable(variable: mnllib.Variable) -> str:
     return f"Variables[{fhex(variable.number, 4)}]"
 
 
-def decompile_const_or_variable(
-    value: int | mnllib.Variable,
-    const_formatter: typing.Callable[[int], str] = repr,
+def repr_or_float32(value: float | object) -> str:
+    if isinstance(value, float):
+        return decompile_float32(value)
+    else:
+        return repr(value)
+
+
+def fhex_or[T](
+    value: T, unknown_formatter: typing.Callable[[T], str], width: int = 0
+) -> str:
+    if isinstance(value, int):
+        return fhex(value, width=width)
+    else:
+        return unknown_formatter(value)
+
+
+def decompile_const_or_variable[T](
+    value: T | mnllib.Variable,
+    const_formatter: typing.Callable[[T], str] = repr_or_float32,
 ) -> str:
     if isinstance(value, mnllib.Variable):
         return decompile_variable(value)
     return const_formatter(value)
 
 
-def decompile_bool_int_or_variable(
-    value: int | mnllib.Variable, int_formatter: typing.Callable[[int], str] = repr
+def decompile_const_or_f32_or_variable[T](
+    value: T | float | mnllib.Variable,
+    const_formatter: typing.Callable[[T], str] = repr,
 ) -> str:
-    if value in [0, 1]:
-        return repr(bool(value))
-    return decompile_const_or_variable(value, const_formatter=int_formatter)
+    if isinstance(value, float):
+        return decompile_float32(value)
+    else:
+        return decompile_const_or_variable(
+            typing.cast(T | mnllib.Variable, value),
+            const_formatter=const_formatter,
+        )
 
 
-def decompile_text(value: bytes) -> str:
-    return (
-        repr(value.decode(mnllib.MNL_ENCODING, errors="backslashreplace"))
-        .replace("\\\\", "\\")
-        .replace("\xff", "\\xff")
+class DecompilerArguments(argparse.Namespace):
+    scripts: list[str]
+    data_dir: pathlib.Path
+    scripts_dir: pathlib.Path
+    force: bool
+    add_offsets: bool
+    stdout: bool
+
+
+def create_decompiler_argument_parser(game_name: str) -> argparse.ArgumentParser:
+    argp = argparse.ArgumentParser(
+        description=f"Decompiler for the {game_name} scripting language to Python."
     )
 
+    argp.add_argument(
+        "scripts",
+        help="the scripts to decompile. Leave blank for all.",
+        nargs="*",
+    )
+    argp.add_argument(
+        "-d",
+        "--data-dir",
+        help=f"""
+            the directory containing the game data
+            (default: '{mnllib.DEFAULT_DATA_DIR_PATH}')
+        """,
+        type=pathlib.Path,
+        default=mnllib.DEFAULT_DATA_DIR_PATH,
+    )
+    argp.add_argument(
+        "-s",
+        "--scripts-dir",
+        help=f"""
+            the directory to place the decompiled scripts in
+            (default: '{DEFAULT_SCRIPTS_DIR_PATH}')
+        """,
+        type=pathlib.Path,
+        default=DEFAULT_SCRIPTS_DIR_PATH,
+    )
+    argp.add_argument(
+        "-f",
+        "--force",
+        help="overwrite existing scripts",
+        action="store_true",
+    )
+    argp.add_argument(
+        "-a",
+        "--add-offsets",
+        help="""
+            add the offset of every command and label in a comment
+            at the end of the respective line
+        """,
+        action="store_true",
+    )
+    argp.add_argument(
+        "-o",
+        "--stdout",
+        help="""
+            output the decompiled scripts to STDOUT, and do not save anything.
+            The script index is output first (signed 16-bit),
+            followed by the length of the script (unsigned 32-bit),
+            followed by the script itself.
+            This repeats for every decompiled script.
+        """,
+        action="store_true",
+    )
 
-def decompile_text_entry(
-    language_table: mnllib.LanguageTable,
-    text_entry_index: int,
-    implicit_text_entry_definition: bool = False,
-) -> str:
-    def combined_entries_and_textbox_sizes(
-        language_id: int,
-    ) -> tuple[bytes, tuple[int, int]]:
-        text_table = typing.cast(
-            mnllib.TextTable, language_table.text_tables[language_id]
-        )
-        return (
-            text_table.entries[text_entry_index],
-            typing.cast(list[tuple[int, int]], text_table.textbox_sizes)[
-                text_entry_index
-            ],
-        )
-
-    if more_itertools.all_equal(
-        map(combined_entries_and_textbox_sizes, LANGUAGE_IDS.values())
-    ):
-        text_table = typing.cast(
-            mnllib.TextTable,
-            language_table.text_tables[next(iter(LANGUAGE_IDS.values()))],
-        )
-        return f"{"" if implicit_text_entry_definition else "TextEntryDefinition("}{
-            decompile_text(text_table.entries[text_entry_index])
-        }, {
-            typing.cast(list[tuple[int, int]], text_table.textbox_sizes)[
-                text_entry_index
-            ]!r}{"" if implicit_text_entry_definition else ")"}"
-    else:
-        text_entries: list[str] = []
-        for language_name, language_id in LANGUAGE_IDS.items():
-            text_table = typing.cast(
-                mnllib.TextTable,
-                language_table.text_tables[language_id],
-            )
-            text_entries.append(
-                f"    {repr(language_name)}: TextEntryDefinition({
-                    decompile_text(text_table.entries[text_entry_index])
-                }, {
-                    typing.cast(list[tuple[int, int]], text_table.textbox_sizes)[
-                        text_entry_index
-                    ]!r}),"
-            )
-        return f"{"{"}\n{"\n".join(text_entries)}\n{"}"}"
+    return argp
