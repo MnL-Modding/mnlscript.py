@@ -25,7 +25,7 @@ def arg_isinstance_or_not_implemented[T, **P](
     [typing.Callable[P, T]], typing.Callable[P, T | types.NotImplementedType]
 ]:
     def decorator(
-        function: typing.Callable[P, T]
+        function: typing.Callable[P, T],
     ) -> typing.Callable[P, T | types.NotImplementedType]:
         @functools.wraps(function)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | types.NotImplementedType:
