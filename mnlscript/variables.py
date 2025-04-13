@@ -63,7 +63,7 @@ def single_command_operation(
     typing.Callable[P, Operation | types.NotImplementedType],
 ]:
     def decorator(
-        function: typing.Callable[P, Operation | types.NotImplementedType | None]
+        function: typing.Callable[P, Operation | types.NotImplementedType | None],
     ) -> typing.Callable[P, Operation | types.NotImplementedType]:
         @functools.wraps(function)
         def wrapper(
@@ -94,13 +94,13 @@ def single_command_operation(
 
 
 def in_place_single_command_operation(
-    command_function: typing.Callable[..., typing.Any]
+    command_function: typing.Callable[..., typing.Any],
 ) -> typing.Callable[
     [typing.Callable[typing.Concatenate[T, P], bool | None]],
     typing.Callable[typing.Concatenate[T, P], T | types.NotImplementedType],
 ]:
     def decorator(
-        function: typing.Callable[typing.Concatenate[T, P], bool | None]
+        function: typing.Callable[typing.Concatenate[T, P], bool | None],
     ) -> typing.Callable[typing.Concatenate[T, P], T | types.NotImplementedType]:
         @functools.wraps(function)
         def wrapper(
