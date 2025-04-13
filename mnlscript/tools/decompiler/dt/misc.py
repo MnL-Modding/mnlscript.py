@@ -3,7 +3,7 @@ import typing
 
 import mnllib.dt
 import more_itertools
-import pymsb
+import pymsbmnl
 
 from ....dt.consts import Sounds, TextboxSoundsPreset
 from ....dt.misc import TextboxSounds
@@ -79,7 +79,7 @@ def decompile_textbox_sounds(
 
 
 def decompile_text_entry_single_language(
-    text_entry: pymsb.LMSMessage,
+    text_entry: pymsbmnl.LMSMessage,
     create_call_condition: CreateCallCondition = CreateCallCondition.WHEN_NECESSARY,
 ) -> str:
     non_default_style = text_entry.style != mnllib.dt.DEFAULT_MESSAGE_STYLE
@@ -104,7 +104,7 @@ def decompile_text_entry_single_language(
 
 
 def decompile_text_entry(
-    text_chunks: dict[str, pymsb.LMSDocument],
+    text_chunks: dict[str, pymsbmnl.LMSDocument],
     text_entry_index: int,
     create_call_condition: CreateCallCondition = CreateCallCondition.WHEN_NECESSARY,
 ) -> str:

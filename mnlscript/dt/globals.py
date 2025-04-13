@@ -3,7 +3,7 @@ import typing
 import bidict
 import mnllib
 import mnllib.dt
-import pymsb
+import pymsbmnl
 
 from .sound import Sound
 
@@ -14,4 +14,4 @@ class Globals:
         mnllib.dt.FEventScriptManager, None
     )
 
-    text_chunks: dict[str, dict[int, pymsb.LMSDocument]] = {}
+    text_chunks: dict[str, dict[int, pymsbmnl.LMSDocument]] = {}

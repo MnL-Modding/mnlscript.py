@@ -5,7 +5,7 @@
 import ctypes
 import typing
 import mnllib
-import pymsb
+import pymsbmnl
 
 from ..commands import (
     arithmetic_0_param_command,
@@ -702,8 +702,8 @@ def show_textbox(
     actor: int | mnllib.Variable | None,
     message: (
         str
-        | pymsb.LMSMessage
-        | dict[str, str | pymsb.LMSMessage]
+        | pymsbmnl.LMSMessage
+        | dict[str, str | pymsbmnl.LMSMessage]
         | int
         | mnllib.Variable
     ),
@@ -730,7 +730,7 @@ def show_textbox(
     if tail is None:
         tail = TextboxTailType.LARGE if actor != -1 else TextboxTailType.NONE
 
-    if isinstance(message, (str, pymsb.LMSMessage, dict)):
+    if isinstance(message, (str, pymsbmnl.LMSMessage, dict)):
         message_id: int | mnllib.Variable | None = emit_text_entry(message)
     else:
         message_id = message
@@ -851,7 +851,10 @@ def say(
         | None
     ),
     message: (
-        pymsb.LMSMessage | dict[str, str | pymsb.LMSMessage] | int | mnllib.Variable
+        pymsbmnl.LMSMessage
+        | dict[str, str | pymsbmnl.LMSMessage]
+        | int
+        | mnllib.Variable
     ),
     *,
     offset: tuple[

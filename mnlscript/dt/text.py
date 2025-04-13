@@ -3,7 +3,7 @@ import typing
 
 from dynamicscope import DYNAMIC_SCOPE
 import mnllib.dt
-import pymsb
+import pymsbmnl
 
 from ..utils import fhex
 from .globals import Globals
@@ -16,8 +16,8 @@ def create_text_entry(
     text: str,
     style: int = mnllib.dt.DEFAULT_MESSAGE_STYLE,
     attributes: dict[str, typing.Any] | None = None,
-) -> pymsb.LMSMessage:
-    message = pymsb.LMSMessage(text)
+) -> pymsbmnl.LMSMessage:
+    message = pymsbmnl.LMSMessage(text)
     message.style = style
     message.attributes = (
         attributes
@@ -29,10 +29,10 @@ def create_text_entry(
 
 def emit_text_chunk(
     language: str,
-    chunk: pymsb.LMSDocument,
+    chunk: pymsbmnl.LMSDocument,
     *,
     room_id: int | None = None,
-) -> pymsb.LMSDocument:
+) -> pymsbmnl.LMSDocument:
     if room_id is None:
         room_id = typing.cast(int, DYNAMIC_SCOPE.script_index) // 2
 
@@ -51,7 +51,7 @@ def emit_text_entry(
 ) -> int | None: ...
 @typing.overload
 def emit_text_entry(
-    entry: pymsb.LMSMessage | dict[str, str | pymsb.LMSMessage],
+    entry: pymsbmnl.LMSMessage | dict[str, str | pymsbmnl.LMSMessage],
     /,
     *,
     room_id: int | None = None,
@@ -59,7 +59,7 @@ def emit_text_entry(
 
 
 def emit_text_entry(
-    entry: str | pymsb.LMSMessage | dict[str, str | pymsb.LMSMessage],
+    entry: str | pymsbmnl.LMSMessage | dict[str, str | pymsbmnl.LMSMessage],
     /,
     style: int | None = None,
     attributes: dict[str, typing.Any] | None = None,
@@ -94,7 +94,7 @@ def emit_text_entry(
                     f"language '{language}' not found in the text entry, and none of "
                     f"the defaults ({DEFAULT_LANGUAGES!r}) are present either"
                 )
-            if isinstance(current_language_entry, pymsb.LMSMessage):
+            if isinstance(current_language_entry, pymsbmnl.LMSMessage):
                 chunk.messages.append(current_language_entry)
             else:
                 current_language_message = chunk.new_message()
@@ -103,7 +103,7 @@ def emit_text_entry(
                     current_language_message.style = style
                 if attributes is not None:
                     current_language_message.attributes = attributes
-        elif isinstance(entry, pymsb.LMSMessage):
+        elif isinstance(entry, pymsbmnl.LMSMessage):
             chunk.messages.append(entry)
         else:
             current_language_message = chunk.new_message()

@@ -3,7 +3,7 @@ import typing
 
 import mnllib
 import mnllib.dt
-import pymsb
+import pymsbmnl
 
 from ....consts import (
     COMPARISON_OPERATORS,
@@ -51,7 +51,7 @@ from .misc import decompile_sound, decompile_text_entry, decompile_textbox_sound
 
 class DTScriptContext(ScriptContext):
     script: mnllib.dt.FEventScript
-    text_chunks: dict[str, pymsb.LMSDocument]
+    text_chunks: dict[str, pymsbmnl.LMSDocument]
 
     def __init__(
         self,
@@ -61,7 +61,7 @@ class DTScriptContext(ScriptContext):
         debug_message_offsets: list[int],
         subroutine: mnllib.Subroutine,
         script: mnllib.dt.FEventScript,
-        text_chunks: dict[str, pymsb.LMSDocument],
+        text_chunks: dict[str, pymsbmnl.LMSDocument],
     ) -> None:
         super().__init__(
             manager, script_index, subroutine_offsets, debug_message_offsets, subroutine

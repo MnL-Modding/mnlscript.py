@@ -71,19 +71,15 @@ name = "mnllib"
 version = "0.2.0"
 description = "Python library for the Mario & Luigi games."
 optional = false
-python-versions = ">=3.12,<4.0"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "mnllib-0.2.0-py3-none-any.whl", hash = "sha256:25b7c291b1ff04c98f45d6e03fa1563e454f330a840f9a67ea7c2e6b43ae2927"},
+    {file = "mnllib-0.2.0.tar.gz", hash = "sha256:8a6f7ee5517dfb358ca711e3275496f3c5f9ece8c5d3cfec3c5326b7a3651093"},
+]
 
 [package.dependencies]
-pymsb = {git = "https://github.com/MnL-Modding/pymsb.git", rev = "v1"}
-
-[package.source]
-type = "git"
-url = "https://github.com/MnL-Modding/mnllib.py.git"
-reference = "v0.2"
-resolved_reference = "97b5a3e3d9f0b0ced0277649a6eb633e479bcebb"
+pymsbmnl = "*"
 
 [[package]]
 name = "more-itertools"
@@ -252,20 +248,16 @@ files = [
 ]
 
 [[package]]
-name = "pymsb"
-version = "1.0.1"
+name = "pymsbmnl"
+version = "1.1.0"
 description = "Python library for Nintendo's MSBT & MSBF formats (Mario & Luigi Modding fork)."
 optional = false
-python-versions = ">=3.10"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/MnL-Modding/pymsb.git"
-reference = "v1"
-resolved_reference = "1c9cf2dc6a6f59a3fa29117b3586a27dadaf32b4"
+files = [
+    {file = "pymsbmnl-1.1.0-py3-none-any.whl", hash = "sha256:15806adf1214131e0ca6d0d8b2e214a0425885a977e124dcb51256831ceed012"},
+    {file = "pymsbmnl-1.1.0.tar.gz", hash = "sha256:04492e663b820b6ea12d920b4948a8a0f39deafb65e6ee257b9feb6893894795"},
+]
 
 [[package]]
 name = "tqdm"
@@ -352,4 +344,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "7fafbb933a103075d546b291c132a7808798e4bad6fa41a8a5d51ed775f3e226"
+content-hash = "f745e05b22b4b015fd248044cc079ae87778719c629532a6a689f7e69bba32a9"

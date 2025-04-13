@@ -12,7 +12,7 @@ import warnings
 import mnllib
 import mnllib.dt
 import mnllib.n3ds
-import pymsb
+import pymsbmnl
 import tqdm
 
 from ....consts import INIT_SCRIPT_FILENAME
@@ -35,7 +35,7 @@ def decompile_subroutine(
     subroutine: mnllib.Subroutine,
     script: mnllib.dt.FEventScript,
     script_index: int,
-    text_chunks: dict[str, pymsb.LMSDocument],
+    text_chunks: dict[str, pymsbmnl.LMSDocument],
     subroutine_offsets: list[tuple[int, int]],
     debug_message_offsets: list[int],
     add_offsets: bool,
@@ -93,7 +93,7 @@ def decompile_subroutine(
 def decompile_script(
     manager: mnllib.dt.FEventScriptManager,
     script: mnllib.dt.FEventScript,
-    text_chunks: dict[str, pymsb.LMSDocument],
+    text_chunks: dict[str, pymsbmnl.LMSDocument],
     add_offsets: bool,
     index: int,
     output: typing.TextIO,
@@ -218,7 +218,7 @@ def process_script(
     fevent_scripts_dir: pathlib.Path,
     scripts_casefolded: list[str],
     fevent_manager: mnllib.dt.FEventScriptManager,
-    text_chunks: dict[str, list[pymsb.LMSDocument]],
+    text_chunks: dict[str, list[pymsbmnl.LMSDocument]],
     room_id_and_pair_index: tuple[int, int],
 ) -> None:
     room_id, pair_index = room_id_and_pair_index
@@ -290,7 +290,7 @@ def main() -> None:
     message_dir = mnllib.n3ds.fs_std_romfs_path(
         mnllib.dt.MESSAGE_DIR_PATH, data_dir=args.data_dir
     )
-    text_chunks: dict[str, list[pymsb.LMSDocument]] = {}
+    text_chunks: dict[str, list[pymsbmnl.LMSDocument]] = {}
     for message_file_path in sorted(message_dir.glob("*/FMes.dat")):
         language = message_file_path.parent.name
         with (

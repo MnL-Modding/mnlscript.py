@@ -9,7 +9,7 @@ import warnings
 import bidict
 import mnllib.dt
 import mnllib.n3ds
-import pymsb
+import pymsbmnl
 
 from ...consts import INIT_SCRIPT_FILENAME
 from ...dt.globals import Globals
@@ -104,7 +104,7 @@ def main() -> None:
 
         if pair_index == 0:
             for language, text_chunks in Globals.text_chunks.items():
-                text_chunks[room_id] = pymsb.LMSDocument(
+                text_chunks[room_id] = pymsbmnl.LMSDocument(
                     lambda: mnllib.dt.DTLMSAdapter(language)
                 )
         module_name = ".".join(
@@ -160,7 +160,9 @@ def main() -> None:
 
     if not args.no_text:
         for language, text_chunks in Globals.text_chunks.items():
-            default_chunk = pymsb.LMSDocument(lambda: mnllib.dt.DTLMSAdapter(language))
+            default_chunk = pymsbmnl.LMSDocument(
+                lambda: mnllib.dt.DTLMSAdapter(language)
+            )
             text_chunks_list = [
                 text_chunks.get(i, default_chunk)
                 for i in range(mnllib.dt.FMES_NUMBER_OF_CHUNKS)
