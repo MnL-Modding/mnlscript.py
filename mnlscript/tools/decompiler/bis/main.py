@@ -310,7 +310,9 @@ def process_script(
         return
 
     script_index = room_id * 3 + triple_index
-    with path.open("w") if not args.stdout else io.StringIO() as output:
+    with (
+        path.open("w", encoding="utf-8") if not args.stdout else io.StringIO()
+    ) as output:
         decompile_script(
             fevent_manager,
             chunk,

@@ -248,7 +248,9 @@ def process_script(
     else:
         current_text_chunks = {}
     script_index = room_id * 2 + pair_index
-    with path.open("w") if not args.stdout else io.StringIO() as output:
+    with (
+        path.open("w", encoding="utf-8") if not args.stdout else io.StringIO()
+    ) as output:
         decompile_script(
             fevent_manager,
             script,
