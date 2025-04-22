@@ -81,6 +81,7 @@ class ActorAttribute(enum.IntEnum):
     X_POSITION = 0x02
     Y_POSITION = 0x03
     Z_POSITION = 0x04
+    FACING = 0x17
     GRAVITY1 = 0x25
     RETAIN_Y = 0x29
     WALL_COLLISION = 0x2B
