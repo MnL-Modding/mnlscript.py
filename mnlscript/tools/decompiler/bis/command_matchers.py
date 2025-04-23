@@ -3,7 +3,15 @@ import typing
 import mnllib
 import mnllib.bis
 
-from ....bis.consts import BubbleType, Sound, TailType, TextboxColor
+from ....bis.consts import (
+    ActorAttribute,
+    Actors,
+    BubbleType,
+    PlayerStat,
+    Sound,
+    TailType,
+    TextboxColor,
+)
 from ....consts import COMPARISON_OPERATORS, StackPopCondition, StackTopModification
 from ....utils import fhex, fhex_byte, fhex_int, fhex_short
 from ..command_matchers import (
@@ -413,6 +421,70 @@ def debug_number(
     }({decompile_const_or_f32_or_variable(matched_commands[0].arguments[0], fhex_int)})"
 
 
+@command_matcher("0041,")
+def add_coins(
+    matched_commands: list[mnllib.CodeCommand],
+    _context: BISCommandMatchContext,
+) -> str | dict[int, str] | None:
+    result_variable = typing.cast(mnllib.Variable, matched_commands[0].result_variable)
+    return f"add_coins({decompile_const_or_variable(matched_commands[0].arguments[0])}{
+        f", res_actual_amount={decompile_variable(result_variable)}"
+        if result_variable.number != 0x1000 else ""
+    })"
+
+
+@command_matcher("0044,")
+def add_items(
+    matched_commands: list[mnllib.CodeCommand],
+    _context: BISCommandMatchContext,
+) -> str | dict[int, str] | None:
+    result_variable = typing.cast(mnllib.Variable, matched_commands[0].result_variable)
+    return f"add_items({
+        decompile_const_or_f32_or_variable(matched_commands[0].arguments[0], fhex_short)
+    }, {decompile_const_or_variable(matched_commands[0].arguments[1])}{
+        f", res_actual_amount={decompile_variable(result_variable)}"
+        if result_variable.number != 0x1000 else ""
+    })"
+
+
+@command_matcher("0045,")
+def get_player_stat(
+    matched_commands: list[mnllib.CodeCommand],
+    _context: BISCommandMatchContext,
+) -> str | dict[int, str] | None:
+    return f"get_player_stat({
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[0],
+            lambda value: decompile_enum(Actors, value, fhex_byte),
+        )
+    }, {
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[1],
+            lambda value: decompile_enum(PlayerStat, value, fhex_byte),
+        )
+    }, res={decompile_variable(
+        typing.cast(mnllib.Variable, matched_commands[0].result_variable)
+    )})"
+
+
+@command_matcher("0046,")
+def set_player_stat(
+    matched_commands: list[mnllib.CodeCommand],
+    _context: BISCommandMatchContext,
+) -> str | dict[int, str] | None:
+    return f"set_player_stat({
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[0],
+            lambda value: decompile_enum(Actors, value, fhex_byte),
+        )
+    }, {
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[1],
+            lambda value: decompile_enum(PlayerStat, value, fhex_byte),
+        )
+    }, {decompile_const_or_variable(matched_commands[0].arguments[2])})"
+
+
 @command_matcher("004[9AB],", offset_params=[(0, 2)])
 def thread_branch(
     matched_commands: list[mnllib.CodeCommand],
@@ -457,6 +529,26 @@ def execute_on_secondary_screen(
     }, unk1={
         decompile_const_or_f32_or_variable(matched_commands[0].arguments[0], fhex_byte)
     })"
+
+
+@command_matcher("0062,")
+def get_actor_attribute(
+    matched_commands: list[mnllib.CodeCommand],
+    _context: BISCommandMatchContext,
+) -> str | dict[int, str] | None:
+    return f"get_actor_attribute({
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[0],
+            lambda value: decompile_enum(Actors, value, fhex_byte),
+        )
+    }, {
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[1],
+            lambda value: decompile_enum(ActorAttribute, value, fhex_byte),
+        )
+    }, res={decompile_variable(
+        typing.cast(mnllib.Variable, matched_commands[0].result_variable)
+    )})"
 
 
 @command_matcher("(?:0096,)?01B[9A],(?:01BD,)?(?:0096,)?")
@@ -580,7 +672,8 @@ def say(
         # actor_or_position
         (
             decompile_const_or_f32_or_variable(
-                matched_commands[0].arguments[0], fhex_byte
+                matched_commands[0].arguments[0],
+                lambda value: decompile_enum(Actors, value, fhex_byte),
             )
             if matched_commands[0].command_id == 0x01BA
             else f"({decompile_const_or_f32_or_variable(
@@ -697,7 +790,10 @@ def set_animation(
     _context: BISCommandMatchContext,
 ) -> str | dict[int, str] | None:
     return f"set_animation({
-        decompile_const_or_f32_or_variable(matched_commands[0].arguments[0], fhex_byte)
+        decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[0],
+            lambda value: decompile_enum(Actors, value, fhex_byte),
+        )
         if matched_commands[0].arguments[0] != -1 else "Self"
     }, {
         decompile_const_or_f32_or_variable(matched_commands[0].arguments[1], fhex_byte)

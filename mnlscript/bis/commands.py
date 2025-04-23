@@ -24,7 +24,14 @@ from ..consts import (
 )
 from ..misc import emit_debug_message
 from ..script import OFFSET_FOOTER, Offset
-from .consts import PLACEHOLDER_OFFSET, BubbleType, TailType, TextboxColor
+from .consts import (
+    PLACEHOLDER_OFFSET,
+    ActorAttribute,
+    BubbleType,
+    PlayerStat,
+    TailType,
+    TextboxColor,
+)
 from .text import LanguageName, TextEntryDefinition, emit_text_entry
 
 
@@ -353,6 +360,51 @@ def debug_hex(
 
 
 @command_emitter()
+def add_coins(
+    amount: int | mnllib.Variable,
+    *,
+    res_actual_amount: mnllib.Variable = mnllib.Variable(0x1000),
+    subroutine: mnllib.Subroutine | None = None,
+) -> mnllib.CodeCommand:
+    return emit_command(0x0041, [amount], res_actual_amount, subroutine=subroutine)
+
+
+@command_emitter()
+def add_items(
+    item: int | mnllib.Variable,
+    amount: int | mnllib.Variable,
+    *,
+    res_actual_amount: mnllib.Variable = mnllib.Variable(0x1000),
+    subroutine: mnllib.Subroutine | None = None,
+) -> mnllib.CodeCommand:
+    return emit_command(
+        0x0044, [item, amount], res_actual_amount, subroutine=subroutine
+    )
+
+
+@command_emitter()
+def get_player_stat(
+    player_char: int | mnllib.Variable,
+    stat: PlayerStat | int | mnllib.Variable,
+    *,
+    res: mnllib.Variable,
+    subroutine: mnllib.Subroutine | None = None,
+) -> mnllib.CodeCommand:
+    return emit_command(0x0045, [player_char, stat], res, subroutine=subroutine)
+
+
+@command_emitter()
+def set_player_stat(
+    player_char: int | mnllib.Variable,
+    stat: PlayerStat | int | mnllib.Variable,
+    value: int | mnllib.Variable,
+    *,
+    subroutine: mnllib.Subroutine | None = None,
+) -> mnllib.CodeCommand:
+    return emit_command(0x0046, [player_char, stat, value], subroutine=subroutine)
+
+
+@command_emitter()
 def start_thread_here_and_branch(
     thread_id: int | mnllib.Variable,
     target: Offset | mnllib.Variable,
@@ -432,6 +484,17 @@ def execute_on_secondary_screen(
         )
     else:
         return emit_command(0x0060, [unk1, target], subroutine=subroutine)
+
+
+@command_emitter()
+def get_actor_attribute(
+    actor: int | mnllib.Variable,
+    attribute: ActorAttribute | int | mnllib.Variable,
+    *,
+    res: mnllib.Variable,
+    subroutine: mnllib.Subroutine | None = None,
+) -> mnllib.CodeCommand:
+    return emit_command(0x0062, [actor, attribute], res, subroutine=subroutine)
 
 
 @command_emitter()
