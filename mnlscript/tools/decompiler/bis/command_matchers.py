@@ -482,7 +482,15 @@ def set_player_stat(
             matched_commands[0].arguments[1],
             lambda value: decompile_enum(PlayerStat, value, fhex_byte),
         )
-    }, {decompile_const_or_variable(matched_commands[0].arguments[2])})"
+    }, {
+        decompile_const_or_variable(matched_commands[0].arguments[2])
+        if matched_commands[0].arguments[1] not in [
+            PlayerStat.GEAR_PIECE_1, PlayerStat.GEAR_PIECE_2, PlayerStat.GEAR_PIECE_3
+        ]
+        else decompile_const_or_f32_or_variable(
+            matched_commands[0].arguments[2], fhex_short
+        )
+    })"
 
 
 @command_matcher("004[9AB],", offset_params=[(0, 2)])
