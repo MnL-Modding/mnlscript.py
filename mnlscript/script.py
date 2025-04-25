@@ -3,8 +3,6 @@ import typing
 
 import mnllib
 
-from .globals import CommonGlobals
-
 
 LABEL_REGEX = re.compile(r"(?:(labels|subs)\[([^\]]+)\]|([^\[\].]+))(?:\.(.+))?")
 
@@ -89,18 +87,19 @@ def resolve_offset(
 
 
 def compute_post_command_offsets(
-    subroutine: mnllib.Subroutine, offset: int
+    manager: mnllib.MnLScriptManager, subroutine: mnllib.Subroutine, offset: int
 ) -> list[int]:
     result: list[int] = []
 
     for command in subroutine.commands:
-        offset += command.serialized_len(CommonGlobals.script_manager, offset)
+        offset += command.serialized_len(manager, offset)
         result.append(offset)
 
     return result
 
 
 def update_commands_with_offsets(
+    manager: mnllib.MnLScriptManager,
     subroutines: list[mnllib.Subroutine],
     offset: int,
 ) -> None:
@@ -124,8 +123,10 @@ def update_commands_with_offsets(
     #             if len(current_post_command_offsets) > 0
     #             else 0
     #         ) + len(subroutine.footer)
-    for subroutine in subroutines:
+    for index, subroutine in enumerate(subroutines):
         subroutine_ext = typing.cast(SubroutineExt, subroutine)
+        if not hasattr(subroutine_ext, "name"):
+            subroutine_ext.name = f"sub_u_0x{index:x}"
 
         if len(subroutine.commands) > 0 and isinstance(
             subroutine.commands[0], mnllib.ArrayCommand
@@ -135,7 +136,7 @@ def update_commands_with_offsets(
         current_subroutine_offset = offset
         current_post_command_offsets: list[int] = []
         for command in subroutine.commands:
-            offset += command.serialized_len(CommonGlobals.script_manager, offset)
+            offset += command.serialized_len(manager, offset)
             current_post_command_offsets.append(offset)
         subroutine_offsets[subroutine_ext.name] = (current_subroutine_offset, offset)
         post_command_offsets.append(current_post_command_offsets)

@@ -526,7 +526,7 @@ def get_actor_attribute(
 def set_actor_attribute(
     actor: int | mnllib.Variable,
     attribute: ActorAttribute | int | mnllib.Variable,
-    value: int | mnllib.Variable,
+    value: float | mnllib.Variable,
     *,
     subroutine: mnllib.Subroutine | None = None,
 ) -> mnllib.CodeCommand:

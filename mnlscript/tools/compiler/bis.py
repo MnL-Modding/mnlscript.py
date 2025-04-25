@@ -75,6 +75,7 @@ def main() -> None:
             post_table_subroutine_ext.name = "sub_post_table"
         module.header.subroutine_table = [0] * len(module.subroutines)
         update_commands_with_offsets(
+            Globals.fevent_manager,
             [module.header.post_table_subroutine, *module.subroutines],
             len(module.header.to_bytes(Globals.fevent_manager)),
         )

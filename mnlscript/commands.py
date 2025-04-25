@@ -1,7 +1,10 @@
 import functools
 import typing
 
-from dynamicscope import DYNAMIC_SCOPE
+from dynamicscope import (
+    DYNAMIC_SCOPE,
+    _DynamicScope,  # pyright: ignore[reportPrivateUsage]
+)
 import mnllib
 import mnllib.bis
 import mnllib.dt
@@ -23,21 +26,28 @@ def subroutine(
     init: bool = False,
     no_return: bool = False,
     footer: bytes = b"",
-    subs: list[mnllib.Subroutine] | None = None,
-    hdr: mnllib.bis.FEventScriptHeader | mnllib.dt.FEventScriptHeader | None = None,
+    subs: list[mnllib.Subroutine] | _DynamicScope | None = DYNAMIC_SCOPE,
+    hdr: (
+        mnllib.bis.FEventScriptHeader
+        | mnllib.dt.FEventScriptHeader
+        | _DynamicScope
+        | None
+    ) = DYNAMIC_SCOPE,
 ) -> typing.Callable[[SubroutineCallable], mnllib.Subroutine]:
     rsubs = (
-        subs
-        if subs is not None
-        else typing.cast(list[mnllib.Subroutine], DYNAMIC_SCOPE.subroutines)
+        typing.cast(
+            list[mnllib.Subroutine] | None, getattr(DYNAMIC_SCOPE, "subroutines", None)
+        )
+        if isinstance(subs, _DynamicScope)
+        else subs
     )
     rhdr = (
-        hdr
-        if hdr is not None
-        else typing.cast(
-            mnllib.bis.FEventScriptHeader | mnllib.dt.FEventScriptHeader,
-            DYNAMIC_SCOPE.header,
+        typing.cast(
+            mnllib.bis.FEventScriptHeader | mnllib.dt.FEventScriptHeader | None,
+            getattr(DYNAMIC_SCOPE, "header", None),
         )
+        if isinstance(hdr, _DynamicScope)
+        else hdr
     )
 
     def decorator(function: SubroutineCallable) -> mnllib.Subroutine:
@@ -55,12 +65,24 @@ def subroutine(
                 raise ValueError(
                     "the post-table subroutine can't be the init subroutine"
                 )
+            elif rhdr is None:
+                raise ValueError(
+                    "'post_table' specified for @subroutine but header is missing"
+                )
             rhdr.post_table_subroutine = subroutine
-        else:
+        elif rsubs is not None:
             rsubs.append(subroutine)
 
         if init:
-            if rhdr.init_subroutine is not None:
+            if rsubs is None:
+                raise ValueError(
+                    "'init' specified for @subroutine but subroutines is missing"
+                )
+            elif rhdr is None:
+                raise ValueError(
+                    "'init' specified for @subroutine but header is missing"
+                )
+            elif rhdr.init_subroutine is not None:
                 raise ValueError(
                     f"the init suboutine is already set to {fhex(rhdr.init_subroutine)}"
                 )
@@ -171,14 +193,22 @@ def array(
 
 
 @command_emitter()
-def label(name: str, *, subroutine: mnllib.Subroutine | None = None) -> str:
+def label(
+    name: str,
+    *,
+    manager: mnllib.MnLScriptManager | None = None,
+    subroutine: mnllib.Subroutine | None = None,
+) -> str:
     assert subroutine is not None
+
+    if manager is None:
+        manager = CommonGlobals.script_manager
 
     subroutine_ext = typing.cast(SubroutineExt, subroutine)
     if not hasattr(subroutine_ext, "labels"):
         subroutine_ext.labels = {}
     subroutine_ext.labels[name] = subroutine.serialized_len(
-        CommonGlobals.script_manager, 0, with_footer=False
+        manager, 0, with_footer=False
     )
     return name
 
