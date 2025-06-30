@@ -146,7 +146,7 @@ def decompile_script(
                     f"({", ".join([fhex(y, 8) for y in x])})"
                     for x in script.header.actors
                 ])}],
-                array5=[{", ".join([fhex(x, 8) for x in script.header.array5])}],
+                array5=[{", ".join([fhex(x, 4) for x in script.header.array5])}],
 
                 index=script_index,
             )"""
