@@ -1,6 +1,6 @@
 [project]
 name = "mnlscript"
-version = "0.2.4"
+version = "0.2.5"
 description = "Compiler and decompiler for the Mario & Luigi scripting language from and to Python."
 authors = [
     {name = "Dimitar Dimitrov",email = "dmtrdmtrov@gmail.com"}
