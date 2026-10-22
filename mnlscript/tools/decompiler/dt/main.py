@@ -57,16 +57,12 @@ def decompile_subroutine(
         decorator_args.append("no_return=True")
     if subroutine.footer:
         decorator_args.append(f"footer={subroutine.footer!r}")
-    output.write(
-        textwrap.dedent(
-            f"""\
+    output.write(textwrap.dedent(f"""\
             @subroutine({", ".join(decorator_args)})
             def sub_{
                 f"0x{index:x}" if index is not None else "post_table"
             }(sub: Subroutine):
-            """
-        )
-    )
+            """))
 
     if len(subroutine.commands) > (1 if has_return else 0):
         decompile_subroutine_commands(
@@ -118,9 +114,7 @@ def decompile_script(
         debug_message_offsets.append(offset)
         offset += len(message.encode(mnllib.MNL_DEBUG_MESSAGE_ENCODING)) + 1
 
-    output.write(
-        textwrap.dedent(
-            f"""\
+    output.write(textwrap.dedent(f"""\
             from mnllib import *
             from mnllib.dt import *
             from mnlscript import *
@@ -148,9 +142,7 @@ def decompile_script(
                 array4=[{", ".join([fhex(x, 8) for x in script.header.array4])}],
 
                 index=script_index,
-            )"""
-        )
-    )
+            )"""))
     if script.header.post_table_subroutine != mnllib.Subroutine([]):
         output.write("\n\n\n")
         decompile_subroutine(
@@ -200,15 +192,13 @@ def decompile_script(
         output.write("\n\n")
 
         for text_entry_index in remaining_text_entries:
-            output.write(
-                f"\nemit_text_entry({
+            output.write(f"\nemit_text_entry({
                     decompile_text_entry(
                         text_chunks,
                         text_entry_index,
                         create_call_condition=CreateCallCondition.NEVER,
                     )
-                })  # {fhex(text_entry_index, 2)}"
-            )
+                })  # {fhex(text_entry_index, 2)}")
 
     output.write("\n")
 

@@ -34,7 +34,6 @@ from .consts import (
 )
 from .text import LanguageName, TextEntryDefinition, emit_text_entry
 
-
 COMMON_ARITHMETIC_COMMANDS = [
     "add",
     "subtract",

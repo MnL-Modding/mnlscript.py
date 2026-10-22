@@ -11,7 +11,6 @@ import mnllib.bis
 from ..utils import fhex
 from .globals import Globals
 
-
 type LanguageName = typing.Literal["jp", "en", "fr", "de", "it", "es"]
 LANGUAGE_IDS: dict[LanguageName, int] = {
     # "jp": 0x43,
@@ -45,10 +44,12 @@ codecs.register_error(CODEC_ERROR_HANDLER_KEEP_LITERAL, keepliteral_errors)
 
 
 @typing.overload
-def emit_text_table[TT: (
-    bytes,
-    None,
-)](  # pyright: ignore [reportOverlappingOverload]
+def emit_text_table[
+    TT: (
+        bytes,
+        None,
+    )
+](  # pyright: ignore [reportOverlappingOverload]
     text_table_id: int, text_table: TT, *, room_id: int | None = None
 ) -> TT: ...
 @typing.overload

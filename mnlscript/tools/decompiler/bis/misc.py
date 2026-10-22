@@ -53,12 +53,10 @@ def decompile_text_entry(
             mnllib.bis.TextTable,
             language_table.text_tables[language_id],
         )
-        text_entries.append(
-            f"    {repr(language_name)}: TextEntryDefinition({
+        text_entries.append(f"    {repr(language_name)}: TextEntryDefinition({
                 decompile_text(text_table.entries[text_entry_index])
             }, {
                 typing.cast(list[tuple[int, int]], text_table.textbox_sizes)[
                     text_entry_index
-                ]!r}),"
-        )
+                ]!r}),")
     return f"{"{"}\n{"\n".join(text_entries)}\n{"}"}"

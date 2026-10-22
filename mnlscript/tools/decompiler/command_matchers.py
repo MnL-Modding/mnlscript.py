@@ -278,8 +278,7 @@ def decompile_subroutine_commands[SC: ScriptContext](
             offset += command.serialized_len(script_context.manager, offset)
             continue
         elif isinstance(command, mnllib.ArrayCommand):
-            decompiled_commands[offset] = (
-                f"array(MnLDataTypes.{
+            decompiled_commands[offset] = f"array(MnLDataTypes.{
                     mnllib.MnLDataTypes(
                         command.data_type  # type: ignore[call-arg,arg-type]
                     ).name
@@ -291,7 +290,6 @@ def decompile_subroutine_commands[SC: ScriptContext](
                     )
                     for x in command.array
                 ])}])"
-            )
             command_index += 1
             offset += command.serialized_len(script_context.manager, offset)
             continue

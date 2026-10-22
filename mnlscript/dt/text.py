@@ -8,7 +8,6 @@ import pymsbmnl
 from ..utils import fhex
 from .globals import Globals
 
-
 DEFAULT_LANGUAGES = ["US_English", "EU_English", "JP_Japanese", "KR_Korean"]
 
 

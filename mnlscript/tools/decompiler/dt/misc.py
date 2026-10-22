@@ -117,15 +117,12 @@ def decompile_text_entry(
             create_call_condition=create_call_condition,
         )
 
-    text_entries = [
-        f"    {repr(language)}: {
+    text_entries = [f"    {repr(language)}: {
             decompile_text_entry_single_language(
                 chunk.messages[text_entry_index],
                 create_call_condition=max(
                     create_call_condition, CreateCallCondition.WHEN_NECESSARY
                 ),
             )
-        },"
-        for language, chunk in text_chunks.items()
-    ]
+        }," for language, chunk in text_chunks.items()]
     return f"{"{"}\n{"\n".join(text_entries)}\n{"}"}"

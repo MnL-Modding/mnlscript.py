@@ -699,61 +699,45 @@ def say(
         message,
     ]
     if matched_commands[0].command_id == 0x01BA and anim != 0x01:
-        arguments.append(
-            f"anim={decompile_const_or_f32_or_variable(
+        arguments.append(f"anim={decompile_const_or_f32_or_variable(
                 anim, fhex_byte
-            ) if anim is not None else "None"}"
-        )
+            ) if anim is not None else "None"}")
     if matched_commands[0].command_id == 0x01BA and post_anim != 0x03:
-        arguments.append(
-            f"post_anim={decompile_const_or_f32_or_variable(
+        arguments.append(f"post_anim={decompile_const_or_f32_or_variable(
                 post_anim, fhex_byte
-            ) if post_anim is not None else "None"}"
-        )
+            ) if post_anim is not None else "None"}")
     if common_args[2] != BubbleType.NORMAL:
-        arguments.append(
-            f"bubble={decompile_const_or_f32_or_variable(
+        arguments.append(f"bubble={decompile_const_or_f32_or_variable(
                 common_args[2],
                 lambda value: decompile_enum(BubbleType, value, fhex_byte)
-            )}"
-        )
+            )}")
     if common_args[3] != TailType.NORMAL:
-        arguments.append(
-            f"tail={decompile_const_or_f32_or_variable(
+        arguments.append(f"tail={decompile_const_or_f32_or_variable(
                 common_args[3],
                 lambda value: decompile_enum(TailType, value, fhex_byte)
-            )}"
-        )
+            )}")
     if common_args[8] != 0:
-        arguments.append(
-            f"wait={
+        arguments.append(f"wait={
                 "False" if common_args[8] == 1
                 else decompile_const_or_f32_or_variable(common_args[8], fhex_byte)
-            }"
-        )
+            }")
     if matched_commands[0].arguments[-1] != TextboxColor.NORMAL:
-        arguments.append(
-            f"color={decompile_const_or_f32_or_variable(
+        arguments.append(f"color={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[-1],
                 lambda value: decompile_enum(TextboxColor, value, fhex_byte)
-            )}"
-        )
+            )}")
     if common_args[0] != 0:
         arguments.append(f"width={decompile_const_or_variable(common_args[0])}")
     if common_args[1] != 0:
         arguments.append(f"height={decompile_const_or_variable(common_args[1])}")
     if common_args[4] != -1:
-        arguments.append(
-            f"tail_size={
+        arguments.append(f"tail_size={
                 decompile_const_or_f32_or_variable(common_args[4], fhex_byte)
-            }"
-        )
+            }")
     if common_args[5] != -1:
-        arguments.append(
-            f"tail_direction={
+        arguments.append(f"tail_direction={
                 decompile_const_or_f32_or_variable(common_args[5], fhex_byte)
-            }"
-        )
+            }")
     if isinstance(common_args[6], int):
         tail_hoffset = common_args[6] & 0x00FF
         textbox_hoffset = common_args[6] >> 8
@@ -762,11 +746,9 @@ def say(
         if tail_hoffset != -1:
             arguments.append(f"tail_hoffset={fhex(tail_hoffset, 2)}")
     else:
-        arguments.append(
-            f"hoffsets_arg={
+        arguments.append(f"hoffsets_arg={
                 decompile_const_or_f32_or_variable(common_args[6], fhex_short)
-            }"
-        )
+            }")
     if common_args[8] != 0 and wait_command_unk1 == 0x00 and not wait_split:
         arguments.append("force_wait_command=True")
     if (common_args[8] == 0 and wait_command_unk1 != 0x00) or wait_split:
@@ -782,11 +764,9 @@ def say(
         matched_commands[0].command_id == 0x01B9
         and matched_commands[0].arguments[13] != 0x0000
     ):
-        arguments.append(
-            f"unk14={decompile_const_or_f32_or_variable(
+        arguments.append(f"unk14={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[13], fhex_short
-            )}"
-        )
+            )}")
     decompiled_commands[say_offset] = f"say({", ".join(arguments)})"
 
     return decompiled_commands | decompiled_post_commands
@@ -817,23 +797,17 @@ def show_save_dialog(
 ) -> str | dict[int, str] | None:
     args: list[str] = []
     if matched_commands[0].arguments[2] != 1:
-        args.append(
-            f"fade_in={decompile_const_or_f32_or_variable(
+        args.append(f"fade_in={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[2], decompile_int_bool
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[0] != 0x00:
-        args.append(
-            f"unk1={decompile_const_or_f32_or_variable(
+        args.append(f"unk1={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[0], fhex_byte,
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[1] != 0x01:
-        args.append(
-            f"unk2={decompile_const_or_f32_or_variable(
+        args.append(f"unk2={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[1], fhex_byte,
-            )}"
-        )
+            )}")
     return f"show_save_dialog({", ".join(args)})"
 
 

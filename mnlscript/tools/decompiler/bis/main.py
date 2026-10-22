@@ -55,16 +55,12 @@ def decompile_subroutine(
         decorator_args.append("no_return=True")
     if subroutine.footer:
         decorator_args.append(f"footer={subroutine.footer!r}")
-    output.write(
-        textwrap.dedent(
-            f"""\
+    output.write(textwrap.dedent(f"""\
             @subroutine({", ".join(decorator_args)})
             def sub_{
                 f"0x{index:x}" if index is not None else "post_table"
             }(sub: Subroutine):
-            """
-        )
-    )
+            """))
 
     if len(subroutine.commands) > (1 if has_return else 0):
         decompile_subroutine_commands(
@@ -115,9 +111,7 @@ def decompile_script(
         debug_message_offsets.append(offset)
         offset += len(message.encode(mnllib.MNL_DEBUG_MESSAGE_ENCODING)) + 1
 
-    output.write(
-        textwrap.dedent(
-            f"""\
+    output.write(textwrap.dedent(f"""\
             from mnllib import *
             from mnllib.bis import *
             from mnlscript import *
@@ -149,9 +143,7 @@ def decompile_script(
                 array5=[{", ".join([fhex(x, 4) for x in script.header.array5])}],
 
                 index=script_index,
-            )"""
-        )
-    )
+            )"""))
     if script.header.post_table_subroutine != mnllib.Subroutine([]):
         output.write("\n\n\n")
         decompile_subroutine(
@@ -197,13 +189,11 @@ def decompile_script(
                 if not outputted_separator:
                     output.write("\n\n")
                     outputted_separator = True
-                output.write(
-                    f"\nemit_text_entry({decompile_text_entry(
+                output.write(f"\nemit_text_entry({decompile_text_entry(
                         chunk_triple[2],
                         text_entry_index,
                         implicit_text_entry_definition=True
-                    )})  # {fhex(text_entry_index, 2)}"
-                )
+                    )})  # {fhex(text_entry_index, 2)}")
 
         language_table_size = len(chunk_triple[2].to_bytes())
         for i, text_table in enumerate(chunk_triple[2].text_tables):
@@ -256,13 +246,11 @@ def decompile_script(
                     if not outputted_separator:
                         output.write("\n")
                         outputted_separator = True
-                    output.write(
-                        f"\n\nemit_text_table({fhex(i, 2)}, [\n{
+                    output.write(f"\n\nemit_text_table({fhex(i, 2)}, [\n{
                             "\n".join([f"    {x!r}," for x in text_table.entries])
                         }\n], is_dialog=True, textbox_sizes={pprint.pformat(
                             text_table.textbox_sizes, indent=4, compact=True
-                        )})"
-                    )
+                        )})")
             elif isinstance(text_table, bytes):
                 if len(set(text_table)) == 1 and len(text_table) > 1:
                     formatted_text_table = f"{text_table[0:1]!r} * {len(text_table)}"

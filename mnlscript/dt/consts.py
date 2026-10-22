@@ -3,7 +3,6 @@ import enum
 from .misc import TextboxSounds
 from .sound import Sound
 
-
 PLACEHOLDER_OFFSET = 0x7BADF00D
 
 

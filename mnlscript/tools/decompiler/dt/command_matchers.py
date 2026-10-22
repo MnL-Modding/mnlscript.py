@@ -578,13 +578,11 @@ def tint_screen(
             ]),
         })"
 
-    decompiled_commands[context.match_offset] = (
-        f"tint_screen({tint_str}{
+    decompiled_commands[context.match_offset] = f"tint_screen({tint_str}{
             f", initial={initial_str}" if initial_str is not None else ""
         }, transition_duration={
             decompile_const_or_f32_or_variable(matched_commands[0].arguments[8])
         }{", wait=False" if not wait else ""})"
-    )
     return decompiled_commands
 
 
@@ -800,39 +798,29 @@ def say(
         message,
     ]
     if matched_commands[0].arguments[3:6] != [0.0, 0.0, 0.0]:
-        arguments.append(
-            f"offset=({", ".join([
+        arguments.append(f"offset=({", ".join([
                 decompile_const_or_f32_or_variable(x, fhex_int)
                 for x in matched_commands[0].arguments[3:6]
-            ])})"
-        )
+            ])})")
     if actor != -1 and anim != 0x01:
-        arguments.append(
-            f"anim={decompile_const_or_f32_or_variable(
+        arguments.append(f"anim={decompile_const_or_f32_or_variable(
                 anim, fhex_byte
-            ) if anim is not None else "None"}"
-        )
+            ) if anim is not None else "None"}")
     if actor != -1 and post_anim != 0x03:
-        arguments.append(
-            f"post_anim={decompile_const_or_f32_or_variable(
+        arguments.append(f"post_anim={decompile_const_or_f32_or_variable(
                 post_anim, fhex_byte
-            ) if post_anim is not None else "None"}"
-        )
+            ) if post_anim is not None else "None"}")
     if not wait:
         arguments.append(f"wait={wait!r}")
     if matched_commands[0].arguments[9] != 4096.0:
-        arguments.append(
-            f"tail_hoffset={decompile_const_or_f32_or_variable(
+        arguments.append(f"tail_hoffset={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[9], fhex_int
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[8] != TextboxFlags.REMOVE_WHEN_DISMISSED | 2:
-        arguments.append(
-            f"flags={decompile_const_or_f32_or_variable(
+        arguments.append(f"flags={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[8],
                 lambda value: decompile_enum(TextboxFlags, value),
-            )}"
-        )
+            )}")
     properties_arg = matched_commands[0].arguments[10]
     if isinstance(properties_arg, int) and properties_arg | 0x0000007F == 0x0000007F:
         tail = properties_arg & 0x00000007
@@ -842,36 +830,26 @@ def say(
         if alignment != TextboxAlignment.AUTOMATIC:
             arguments.append(f"alignment={decompile_enum(TextboxAlignment, alignment)}")
     else:
-        arguments.append(
-            f"properties_arg={decompile_const_or_f32_or_variable(
+        arguments.append(f"properties_arg={decompile_const_or_f32_or_variable(
                 properties_arg, fhex_int
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[0] != -0x01:
-        arguments.append(
-            f"unk1={decompile_const_or_f32_or_variable(
+        arguments.append(f"unk1={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[0], fhex_byte
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[6] != 0x0000:
-        arguments.append(
-            f"unk7={decompile_const_or_f32_or_variable(
+        arguments.append(f"unk7={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[6], fhex_short
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[7] != 0x0000:
-        arguments.append(
-            f"unk8={decompile_const_or_f32_or_variable(
+        arguments.append(f"unk8={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[7], fhex_short
-            )}"
-        )
+            )}")
     if matched_commands[0].arguments[11] != 0:
-        arguments.append(
-            f"unk_sound={decompile_const_or_f32_or_variable(
+        arguments.append(f"unk_sound={decompile_const_or_f32_or_variable(
                 matched_commands[0].arguments[11],
                 lambda value: decompile_sound(value, bank_shift=16),
-            )}"
-        )
+            )}")
     if textbox_id.number != 0x1000:
         arguments.append(f"res_textbox_id={decompile_variable(textbox_id)}")
     decompiled_commands[say_offset] = f"say({", ".join(arguments)})"
@@ -952,8 +930,7 @@ def move_camera(
         else:
             wait = True
 
-    decompiled_commands[context.match_offset] = (
-        f"move_camera(({", ".join([
+    decompiled_commands[context.match_offset] = f"move_camera(({", ".join([
             decompile_const_or_f32_or_variable(x, fhex_int)
             for x in matched_commands[0].arguments[1:4]
         ])}), unk5={decompile_const_or_f32_or_variable(
@@ -980,7 +957,6 @@ def move_camera(
         }" if matched_commands[0].arguments[9] != 0x01 else ""}{
             ", wait=False" if not wait else ""
         })"
-    )
     return decompiled_commands
 
 
@@ -1011,8 +987,7 @@ def rotate_camera(
         else:
             wait = True
 
-    decompiled_commands[context.match_offset] = (
-        f"rotate_camera(({", ".join([
+    decompiled_commands[context.match_offset] = f"rotate_camera(({", ".join([
             decompile_const_or_f32_or_variable(x, fhex_int)
             for x in matched_commands[0].arguments[2:5]
         ])}), speed=({", ".join([
@@ -1034,7 +1009,6 @@ def rotate_camera(
         }" if matched_commands[0].arguments[8] != 0x01 else ""}{
             ", wait=False" if not wait else ""
         })"
-    )
     return decompiled_commands
 
 

@@ -3,7 +3,6 @@ import typing
 
 import mnllib
 
-
 LABEL_REGEX = re.compile(r"(?:(labels|subs)\[([^\]]+)\]|([^\[\].]+))(?:\.(.+))?")
 
 type Offset = str | tuple[str, int] | int

@@ -1,6 +1,5 @@
 import enum
 
-
 PLACEHOLDER_OFFSET = 0x7BAD
 
 
